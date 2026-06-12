@@ -462,6 +462,13 @@ export async function findCardsByScanData(
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 }
 
+/** Find a single card by exact match on data_matrix field */
+export async function findCardByDataMatrix(code: string): Promise<Card | null> {
+  if (!code || code.trim().length === 0) return null;
+  const trimmed = code.trim();
+  return cards.find(c => c.data_matrix === trimmed) ?? null;
+}
+
 export async function getTotalInvestment(): Promise<number> {
   return cards.reduce((sum, c) => sum + c.price_paid * c.quantity, 0);
 }

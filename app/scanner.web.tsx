@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Colors, FontSize, Spacing, formatCurrency } from '../utils/format';
 import { DexColors, DexStyles } from '../utils/pokedex-theme';
 import { QuickAddOverlay } from '../components/QuickAddOverlay';
-import { findCardsByScanData, Card, getCardById } from '../database';
+import { findCardsByScanData, Card, getCardById, findCardByDataMatrix } from '../database';
 import { playItemFoundSound } from '../utils/sounds';
 
 // ── BarcodeDetector Types ──
@@ -31,6 +31,7 @@ interface ScannedCard {
   set_name: string;
   card_number?: string;
   dbId?: number;
+  rawCode?: string;
   isSharedInventory?: boolean;
   sharedCards?: any[];
 }
@@ -66,7 +67,7 @@ function parseScanData(data: string): ScannedCard {
       card_number: parts[2]?.trim(),
     };
   }
-  return { name: data.trim(), set_name: '' };
+  return { name: '', set_name: '', rawCode: data.trim() };
 }
 
 export default function ScannerWebPage() {
@@ -202,7 +203,10 @@ export default function ScannerWebPage() {
             let existingTotal = 0;
 
             try {
-              if (scanned.dbId) {
+              if (scanned.rawCode) {
+                found = await findCardByDataMatrix(scanned.rawCode);
+              }
+              if (!found && scanned.dbId) {
                 found = await getCardById(scanned.dbId);
               }
               if (!found) {
@@ -319,6 +323,21 @@ export default function ScannerWebPage() {
     }
 
     setSelectedCard(overlay.card);
+
+    // If raw DataMatrix code, try data_matrix lookup first
+    if (overlay.card.rawCode) {
+      try {
+        const dmCard = await findCardByDataMatrix(overlay.card.rawCode);
+        if (dmCard) {
+          setFoundCard(dmCard);
+          setExistingCards([]);
+          setShowOverlay(true);
+          setIsScanning(false);
+          return;
+        }
+      } catch {}
+    }
+
     setFoundCard(overlay.foundCard);
     setExistingCards([]);
     setShowOverlay(true);

@@ -7,13 +7,14 @@ import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-ca
 import { Colors, FontSize, Spacing, BorderRadius } from '../utils/format';
 import { QuickAddOverlay } from '../components/QuickAddOverlay';
 import { ErrorState } from '../components/EmptyState';
-import { findCardsByScanData, Card, getCardById } from '../database';
+import { findCardsByScanData, Card, getCardById, findCardByDataMatrix } from '../database';
 
 interface ScannedCard {
   name: string;
   set_name: string;
   card_number?: string;
   dbId?: number;
+  rawCode?: string;
 }
 
 export default function ScannerScreen() {
@@ -77,9 +78,11 @@ export default function ScannerScreen() {
           card_number: parts[2]?.trim(),
         };
       } else {
+        // Raw DataMatrix code — store as data_matrix, not as name
         cardData = {
-          name: result.data.trim(),
+          name: '',
           set_name: '',
+          rawCode: result.data.trim(),
         };
       }
 
@@ -96,6 +99,22 @@ export default function ScannerScreen() {
           ]
         );
         return;
+      }
+
+      // If we have a raw DataMatrix code, try matching by data_matrix first
+      if (cardData.rawCode) {
+        setIsScanning(false);
+        setScanned(cardData);
+        try {
+          const dmCard = await findCardByDataMatrix(cardData.rawCode);
+          if (dmCard) {
+            setFoundCard(dmCard);
+            setExistingCards([]);
+            setShowOverlay(true);
+            setScanError(null);
+            return;
+          }
+        } catch {}
       }
 
       setIsScanning(false);

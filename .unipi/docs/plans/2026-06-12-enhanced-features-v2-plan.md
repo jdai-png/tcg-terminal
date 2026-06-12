@@ -114,7 +114,7 @@ Implement 5 feature groups (A–E) across database layer, UI screens, and utilit
     3. Update `printLabel` HTML template — add price target display, social handle line
     4. Update label preview in modal
 
-- unstarted: Task 7 — QR Inventory Sharing
+- completed: Task 7 — QR Inventory Sharing
   - Description: Add "Share Inventory" button to logistics screen. Generate QR code with sanitized inventory JSON. Scanner recognizes share payload and displays read-only view.
   - Dependencies: None
   - Acceptance Criteria:

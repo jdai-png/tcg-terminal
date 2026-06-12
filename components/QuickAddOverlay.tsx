@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, StyleSheet, Vibration, Platform, Alert, ScrollView,
+  View, Text, TouchableOpacity, TextInput, Modal, StyleSheet, Vibration, Platform, Alert, ScrollView,
 } from 'react-native';
 import { Colors, FontSize, Spacing, BorderRadius, formatCurrency, formatDate } from '../utils/format';
 import { CardInsert, insertCard, updateCard, Card } from '../database';
 
 interface QuickAddOverlayProps {
   visible: boolean;
-  scannedData: { name: string; set_name: string; card_number?: string; dbId?: number } | null;
+  scannedData: { name: string; set_name: string; card_number?: string; dbId?: number; rawCode?: string } | null;
   /** Card found by exact ID match (lookup mode) */
   foundCard: Card | null;
   /** Cards found by name/set match (registration mode) */
@@ -20,6 +20,7 @@ export function QuickAddOverlay({
   visible, scannedData, foundCard, existingCards, onClose, onSaved,
 }: QuickAddOverlayProps) {
   const [price, setPrice] = useState('');
+  const [nameInput, setNameInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   const priceRef = useRef('');
@@ -27,7 +28,7 @@ export function QuickAddOverlay({
 
   useEffect(() => { priceRef.current = price; }, [price]);
   useEffect(() => { scannedRef.current = scannedData; }, [scannedData]);
-  useEffect(() => { if (visible) { setPrice(''); setSaving(false); } }, [visible]);
+  useEffect(() => { if (visible) { setPrice(''); setNameInput(''); setSaving(false); } }, [visible]);
 
   // ── MODE DETECTION ──
   const isLookup = !!foundCard; // Card was found by its unique ID
@@ -67,11 +68,12 @@ export function QuickAddOverlay({
 
     setSaving(true);
     const card: CardInsert = {
-      name: data.name || 'Unknown Card',
+      name: nameInput || data.name || 'Unknown Card',
       set_name: data.set_name,
       card_number: data.card_number,
       price_paid: parsedPrice,
       condition: 'Near Mint',
+      data_matrix: data.rawCode || undefined,
     };
 
     try {
@@ -291,7 +293,21 @@ export function QuickAddOverlay({
             </Text>
             {scannedData && (
               <View style={styles.scanInfo}>
-                <Text style={styles.cardName}>{scannedData.name || 'Unknown Card'}</Text>
+                {scannedData?.rawCode && !scannedData?.name ? (
+                  <>
+                    <TextInput
+                      style={styles.nameInput}
+                      placeholder="Enter card name..."
+                      placeholderTextColor={Colors.textMuted}
+                      value={nameInput}
+                      onChangeText={setNameInput}
+                      autoFocus
+                    />
+                    <Text style={styles.rawCodeDisplay}>DataMatrix: {scannedData.rawCode.slice(0, 20)}...</Text>
+                  </>
+                ) : (
+                  <Text style={styles.cardName}>{scannedData?.name || 'Unknown Card'}</Text>
+                )}
                 <Text style={styles.cardSet}>
                   {scannedData.set_name || 'Unknown Set'}
                   {scannedData.card_number ? ` · #${scannedData.card_number}` : ''}
@@ -420,6 +436,25 @@ const styles = StyleSheet.create({
   title: { color: Colors.accent, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, textAlign: 'center', marginBottom: Spacing.sm },
   scanInfo: { alignItems: 'center', marginBottom: Spacing.md },
   cardName: { color: Colors.text, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center' },
+  nameInput: {
+    backgroundColor: Colors.bgInput,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: Colors.text,
+    fontSize: FontSize.md,
+    borderWidth: 1,
+    borderColor: Colors.accent + '44',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  rawCodeDisplay: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    textAlign: 'center',
+    marginTop: 4,
+  },
   cardSet: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
   cardRarity: { color: Colors.accentBlue, fontSize: FontSize.xs, fontWeight: '600', marginTop: 2 },
 

@@ -384,6 +384,17 @@ export async function findCardsByScanData(
   );
 }
 
+/** Find a single card by exact match on data_matrix field */
+export async function findCardByDataMatrix(code: string): Promise<Card | null> {
+  if (!code || code.trim().length === 0) return null;
+  const database = await getDatabase();
+  const result = await database.getFirstAsync<Card>(
+    'SELECT * FROM cards WHERE data_matrix = ?',
+    [code.trim()]
+  );
+  return result ?? null;
+}
+
 // ---- Aggregation Queries ----
 
 export async function getTotalInvestment(): Promise<number> {
