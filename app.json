@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "TCG Terminal",
+    "slug": "tcg-terminal",
+    "version": "1.0.0",
+    "scheme": "tcg-terminal",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0E14",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow TCG Terminal to access your camera to scan cards."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "documentPickerPermission": "Allow TCG Terminal to access files for import."
+        }
+      ],
+      "expo-asset"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera used to scan QR and DataMatrix codes on slabs and labels."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0E14"
+      }
+    }
+  }
+}
