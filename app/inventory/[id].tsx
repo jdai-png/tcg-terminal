@@ -301,6 +301,35 @@ export default function CardDetailScreen() {
         <Text style={styles.printLabelBtnText}>🖨 Print DataMatrix Label</Text>
       </TouchableOpacity>
 
+      {card.archived === 1 && (
+        <TouchableOpacity
+          style={styles.unarchiveBtn}
+          onPress={() => {
+            Alert.alert(
+              'Un-archive Card',
+              `Restore "${card.name}" to active inventory? Quantity will be set to 1.`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Un-archive',
+                  onPress: async () => {
+                    try {
+                      await updateCard(card.id, { archived: 0, archived_at: null, quantity: 1 });
+                      Alert.alert('✓ Restored', `${card.name} is now active again.`);
+                      loadCard();
+                    } catch (err: any) {
+                      Alert.alert('Error', err.message);
+                    }
+                  },
+                },
+              ]
+            );
+          }}
+        >
+          <Text style={styles.unarchiveBtnText}>↩ Un-archive Card</Text>
+        </TouchableOpacity>
+      )}
+
       <PrintLabelModal
         visible={showPrintModal}
         card={card}
@@ -439,6 +468,20 @@ const styles = StyleSheet.create({
   },
   printLabelBtnText: {
     color: Colors.accent,
+    fontSize: FontSize.md,
+    fontWeight: '600',
+  },
+  unarchiveBtn: {
+    paddingVertical: 14,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.warning,
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.warning + '11',
+  },
+  unarchiveBtnText: {
+    color: Colors.warning,
     fontSize: FontSize.md,
     fontWeight: '600',
   },

@@ -6,7 +6,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors, FontSize, Spacing, BorderRadius } from '../../utils/format';
 import { getAllCards, getDistinctSets, getDistinctRarities, Card, CardFilters } from '../../database';
 import { CardRow } from '../../components/CardRow';
-import { FilterBar, FilterValues } from '../../components/FilterBar';
+import { FilterBar } from '../../components/FilterBar';
 import { CardRowSkeleton } from '../../components/Skeleton';
 import { EmptyState, ErrorState } from '../../components/EmptyState';
 
@@ -20,18 +20,26 @@ export default function InventoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [sets, setSets] = useState<string[]>([]);
   const [rarities, setRarities] = useState<string[]>([]);
-  const [filters, setFilters] = useState<FilterValues>({
-    search: '', set_name: '', rarity: '', condition: '', minPrice: '', maxPrice: '',
+  const [filters, setFilters] = useState<CardFilters & { includeArchived?: boolean }>({
+    search: '',
+    set_name: undefined,
+    rarity: undefined,
+    condition: undefined,
+    minPrice: undefined,
+    maxPrice: undefined,
+    includeArchived: false,
   });
 
-  const loadCards = useCallback(async (filterVals: FilterValues) => {
+  const loadCards = useCallback(async (filterVals: typeof filters) => {
     try {
-      const apiFilters: CardFilters = { search: filterVals.search || undefined };
-      if (filterVals.set_name) apiFilters.set_name = filterVals.set_name;
-      if (filterVals.rarity) apiFilters.rarity = filterVals.rarity;
-      if (filterVals.condition) apiFilters.condition = filterVals.condition;
-      if (filterVals.minPrice) apiFilters.minPrice = parseFloat(filterVals.minPrice);
-      if (filterVals.maxPrice) apiFilters.maxPrice = parseFloat(filterVals.maxPrice);
+      const { includeArchived, ...rest } = filterVals;
+      const apiFilters: CardFilters = { search: rest.search || undefined };
+      if (rest.set_name) apiFilters.set_name = rest.set_name;
+      if (rest.rarity) apiFilters.rarity = rest.rarity;
+      if (rest.condition) apiFilters.condition = rest.condition;
+      if (rest.minPrice !== undefined) apiFilters.minPrice = Number(rest.minPrice);
+      if (rest.maxPrice !== undefined) apiFilters.maxPrice = Number(rest.maxPrice);
+      if (includeArchived) apiFilters.includeArchived = true;
 
       const [cardList, setList, rarityList] = await Promise.all([
         getAllCards(apiFilters),
@@ -66,7 +74,12 @@ export default function InventoryScreen() {
   };
 
   const renderItem = ({ item }: { item: Card }) => (
-    <CardRow card={item} onPress={handleCardPress} />
+    <View style={item.archived === 1 ? styles.archivedItem : undefined}>
+      <CardRow card={item} onPress={item.archived === 1 ? () => {} : handleCardPress} />
+      {item.archived === 1 && (
+        <Text style={styles.archivedBadge}>Archived</Text>
+      )}
+    </View>
   );
 
   function ListHeader() {
@@ -87,6 +100,8 @@ export default function InventoryScreen() {
           sets={sets}
           rarities={rarities}
           conditions={CONDITIONS}
+          includeArchived={filters.includeArchived}
+          onIncludeArchivedChange={(v) => setFilters(prev => ({ ...prev, includeArchived: v }))}
         />
       </View>
     );
@@ -189,5 +204,21 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: FontSize.xs,
     fontWeight: '600',
+  },
+  archivedBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 16,
+    color: Colors.warning,
+    fontSize: 10,
+    fontWeight: '600',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: Colors.warning + '18',
+    overflow: 'hidden',
+  },
+  archivedItem: {
+    opacity: 0.6,
   },
 });

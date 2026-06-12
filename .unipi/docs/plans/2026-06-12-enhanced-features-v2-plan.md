@@ -44,7 +44,7 @@ Implement 5 feature groups (A–E) across database layer, UI screens, and utilit
     2. Add settings link to logistics.tsx header
     3. Add settings to _layout.tsx tab navigation (gear icon)
 
-- in-progress: Task 3 — Card Metadata: Description + Calendar + Days in Inventory + Image
+- completed: Task 3 — Card Metadata: Description + Calendar + Days in Inventory + Image
   - Description: Add description field, date picker component, days-in-inventory display, image upload/view on card detail, register, and edit screens.
   - Dependencies: Task 1 (schema)
   - Acceptance Criteria:
@@ -60,7 +60,7 @@ Implement 5 feature groups (A–E) across database layer, UI screens, and utilit
     5. Install `expo-image-picker` if needed
     6. Update CSV export/import for description and archived fields
 
-- unstarted: Task 4 — Sales Archiving & ID Retirement
+- in-progress: Task 4 — Sales Archiving & ID Retirement
   - Description: Decrement card quantity on sale. Auto-archive when quantity hits 0. Add archive toggle to inventory filter. Un-archive support. Prevent sales of archived cards.
   - Dependencies: Task 1 (archived columns)
   - Acceptance Criteria:

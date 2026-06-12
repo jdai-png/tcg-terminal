@@ -348,7 +348,7 @@ function RecordSaleModal({ visible, onClose, onSaved }: {
   const loadInventory = useCallback(async (term: string = '') => {
     setLoadingInv(true);
     try {
-      const cards = await getAllCards({ search: term || undefined });
+      const cards = await getAllCards({ search: term || undefined, includeArchived: false });
       setInventory(cards);
     } catch {} finally {
       setLoadingInv(false);
@@ -362,6 +362,14 @@ function RecordSaleModal({ visible, onClose, onSaved }: {
   }, [visible, step, search, loadInventory]);
 
   const handleSelectCard = (card: Card) => {
+    if (card.archived === 1) {
+      Alert.alert(
+        'Card Archived',
+        'This card has been archived (quantity reached 0). Un-archive it first from the Inventory detail screen before recording a sale.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     setSelectedCard(card);
     setStep('details');
   };

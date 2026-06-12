@@ -3,12 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Modal 
 import { Colors, FontSize, Spacing, BorderRadius } from '../utils/format';
 
 export type FilterValues = {
-  search: string;
-  set_name: string;
-  rarity: string;
-  condition: string;
-  minPrice: string;
-  maxPrice: string;
+  search?: string;
+  set_name?: string;
+  rarity?: string;
+  condition?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  includeArchived?: boolean;
 };
 
 interface FilterBarProps {
@@ -17,22 +18,24 @@ interface FilterBarProps {
   sets: string[];
   rarities: string[];
   conditions: string[];
+  includeArchived?: boolean;
+  onIncludeArchivedChange?: (value: boolean) => void;
 }
 
-export function FilterBar({ filters, onFiltersChange, sets, rarities, conditions }: FilterBarProps) {
+export function FilterBar({ filters, onFiltersChange, sets, rarities, conditions, includeArchived, onIncludeArchivedChange }: FilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
-  const hasActiveFilters = filters.set_name || filters.rarity || filters.condition || filters.minPrice || filters.maxPrice;
+  const hasActiveFilters = !!filters.set_name || !!filters.rarity || !!filters.condition || filters.minPrice !== undefined || filters.maxPrice !== undefined;
 
   const updateFilter = (key: keyof FilterValues, value: string) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
   const clearFilters = () => {
-    onFiltersChange({ search: '', set_name: '', rarity: '', condition: '', minPrice: '', maxPrice: '' });
+    onFiltersChange({ search: '', set_name: undefined, rarity: undefined, condition: undefined, minPrice: undefined, maxPrice: undefined, includeArchived: false });
   };
 
   const FilterChip = ({ label, value, options, filterKey }: {
-    label: string; value: string; options: string[]; filterKey: keyof FilterValues;
+    label: string; value: string | undefined; options: string[]; filterKey: keyof FilterValues;
   }) => (
     <View style={cStyles.filterGroup}>
       <Text style={cStyles.filterLabel}>{label}</Text>
@@ -93,8 +96,8 @@ export function FilterBar({ filters, onFiltersChange, sets, rarities, conditions
                 placeholder="Min $"
                 placeholderTextColor={Colors.textMuted}
                 keyboardType="decimal-pad"
-                value={filters.minPrice}
-                onChangeText={v => updateFilter('minPrice', v)}
+                value={filters.minPrice !== undefined ? String(filters.minPrice) : ''}
+                onChangeText={v => onFiltersChange({ ...filters, minPrice: v ? Number(v) : undefined })}
               />
               <Text style={cStyles.priceSep}>–</Text>
               <TextInput
@@ -102,11 +105,25 @@ export function FilterBar({ filters, onFiltersChange, sets, rarities, conditions
                 placeholder="Max $"
                 placeholderTextColor={Colors.textMuted}
                 keyboardType="decimal-pad"
-                value={filters.maxPrice}
-                onChangeText={v => updateFilter('maxPrice', v)}
+                value={filters.maxPrice !== undefined ? String(filters.maxPrice) : ''}
+                onChangeText={v => onFiltersChange({ ...filters, maxPrice: v ? Number(v) : undefined })}
               />
             </View>
           </View>
+
+          {onIncludeArchivedChange && (
+            <View style={cStyles.archivedToggleRow}>
+              <TouchableOpacity
+                style={[cStyles.archivedChip, includeArchived && cStyles.archivedChipActive]}
+                onPress={() => onIncludeArchivedChange(!includeArchived)}
+                activeOpacity={0.7}
+              >
+                <Text style={[cStyles.archivedChipText, includeArchived && cStyles.archivedChipTextActive]}>
+                  🗄 {includeArchived ? 'Including Archived' : 'Hide Archived'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {hasActiveFilters && (
             <TouchableOpacity style={cStyles.clearBtn} onPress={clearFilters}>
@@ -239,5 +256,29 @@ const cStyles = StyleSheet.create({
     color: Colors.danger,
     fontSize: FontSize.sm,
     fontWeight: '600',
+  },
+  archivedToggleRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  archivedChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: Colors.bgInput,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  archivedChipActive: {
+    backgroundColor: Colors.warning + '18',
+    borderColor: Colors.warning + '44',
+  },
+  archivedChipText: {
+    color: Colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+  },
+  archivedChipTextActive: {
+    color: Colors.warning,
   },
 });
