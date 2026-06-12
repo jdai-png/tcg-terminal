@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, StyleSheet, Platform, ActivityIndicator, ScrollView,
+  View, Text, TouchableOpacity, Modal, StyleSheet, Platform, ActivityIndicator, ScrollView, Switch,
 } from 'react-native';
 import { Colors, FontSize, Spacing, BorderRadius, formatCurrency } from '../utils/format';
-import { Card } from '../database';
+import { Card, getAppSettings } from '../database';
 import { generateDataMatrixSvg, encodeCardForLabel, printLabel } from '../utils/labelPrinter';
 
 interface PrintLabelModalProps {
@@ -16,16 +16,33 @@ export function PrintLabelModal({ visible, card, onClose }: PrintLabelModalProps
   const [svgData, setSvgData] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [includeSocialsOnLabel, setIncludeSocialsOnLabel] = useState(false);
+  const [socialHandles, setSocialHandles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (visible && card) {
       setLoading(true);
       setError(null);
+
+      // Load settings to check social handles
+      getAppSettings().then(settings => {
+        setIncludeSocialsOnLabel(settings['label_include_socials'] === '1');
+        setSocialHandles({
+          instagram: settings['social_instagram'] || '',
+          twitter: settings['social_twitter'] || '',
+          ebay: settings['social_ebay'] || '',
+          website: settings['social_website'] || '',
+          custom1: settings['social_custom1'] || '',
+          custom2: settings['social_custom2'] || '',
+        });
+      }).catch(() => {});
+
       const data = encodeCardForLabel({
         id: card.id,
         name: card.name,
         set_name: card.set_name,
         card_number: card.card_number || undefined,
+        price_target: card.price_target || 0,
       });
 
       generateDataMatrixSvg(data)
@@ -61,7 +78,7 @@ export function PrintLabelModal({ visible, card, onClose }: PrintLabelModalProps
         ctx.drawImage(img, 20, 20, 360, 360);
         URL.revokeObjectURL(url);
         const pngData = canvas.toDataURL('image/png');
-        printLabel(card, pngData);
+        printLabel(card, pngData, includeSocialsOnLabel, includeSocialsOnLabel ? socialHandles : undefined);
       };
       img.src = url;
     }
@@ -111,11 +128,29 @@ export function PrintLabelModal({ visible, card, onClose }: PrintLabelModalProps
               )}
             </View>
 
+            {/* Social handles toggle */}
+            <View style={[styles.infoBox, { marginTop: Spacing.md }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.infoTitle}>Social Handles</Text>
+                  <Text style={[styles.infoText, { marginTop: 0 }]}>
+                    Include Instagram, Twitter etc. on label
+                  </Text>
+                </View>
+                <Switch
+                  value={includeSocialsOnLabel}
+                  onValueChange={setIncludeSocialsOnLabel}
+                  trackColor={{ false: Colors.border, true: Colors.accent + '66' }}
+                  thumbColor={includeSocialsOnLabel ? Colors.accent : Colors.textMuted}
+                />
+              </View>
+            </View>
+
             {/* Info */}
             <View style={styles.infoBox}>
               <Text style={styles.infoTitle}>How it works</Text>
               <Text style={styles.infoText}>
-                This DataMatrix contains your card's unique ID, name, and set. Scanning it with any QR/DataMatrix reader (including this app) will instantly identify the card and show your saved price.
+                This DataMatrix contains your card's unique ID, name, set, and price target. Scanning it with any QR/DataMatrix reader will instantly identify the card.
               </Text>
             </View>
 

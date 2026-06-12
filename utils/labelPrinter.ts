@@ -10,6 +10,15 @@ export interface LabelData {
   name: string;
   set_name: string;
   card_number?: string;
+  price_target?: number;
+  social_handles?: {
+    instagram?: string;
+    twitter?: string;
+    ebay?: string;
+    website?: string;
+    custom1?: string;
+    custom2?: string;
+  };
 }
 
 /**
@@ -18,12 +27,25 @@ export interface LabelData {
  *   {"name":"Charizard","set_name":"Base Set","card_number":"4/102","id":1}
  */
 export function encodeCardForLabel(card: LabelData): string {
-  return JSON.stringify({
+  const data: any = {
     name: card.name,
     set_name: card.set_name,
     card_number: card.card_number || '',
     id: card.id,
-  });
+    price_target: card.price_target || 0,
+  };
+  // Only include social handles if any are non-empty
+  if (card.social_handles) {
+    const handles: any = {};
+    if (card.social_handles.instagram) handles.ig = card.social_handles.instagram;
+    if (card.social_handles.twitter) handles.x = card.social_handles.twitter;
+    if (card.social_handles.ebay) handles.ebay = card.social_handles.ebay;
+    if (card.social_handles.website) handles.web = card.social_handles.website;
+    if (card.social_handles.custom1) handles.c1 = card.social_handles.custom1;
+    if (card.social_handles.custom2) handles.c2 = card.social_handles.custom2;
+    if (Object.keys(handles).length > 0) data.social = handles;
+  }
+  return JSON.stringify(data);
 }
 
 /**
@@ -77,8 +99,10 @@ export async function generateDataMatrixSvg(data: string): Promise<string> {
  * matching the NK_P21 74×124mm label size.
  */
 export function printLabel(
-  card: Card,
-  dataMatrixPng: string
+  card: Card & { price_target?: number },
+  dataMatrixPng: string,
+  includeSocials?: boolean,
+  socialHandles?: { instagram?: string; twitter?: string; ebay?: string; website?: string; }
 ): void {
   const encodedData = encodeCardForLabel(card);
 
@@ -183,13 +207,20 @@ export function printLabel(
         <img src="${dataMatrixPng}" alt="DataMatrix" />
       </div>
 
-      <div style="display:flex;align-items:center;gap:2mm;">
+      <div style="display:flex;align-items:center;gap:2mm;flex-wrap:wrap;justify-content:center;">
         <span class="condition">${escapeHtml(card.condition)}</span>
         <span class="price">$${card.price_paid.toFixed(2)}</span>
+        ${(card.price_target && card.price_target > 0) ? `<span class="price" style="color:#f59e0b;margin-top:1mm;">Target: $${card.price_target.toFixed(2)}</span>` : ''}
       </div>
 
       <div class="label-footer">
         <div class="id-text">ID: ${card.id} · TCG Terminal</div>
+        ${includeSocials && socialHandles ? `
+          <div class="id-text" style="margin-top:0.5mm;">
+            ${socialHandles.instagram ? `@${socialHandles.instagram.replace('@','')} ` : ''}
+            ${socialHandles.twitter ? `@${socialHandles.twitter.replace('@','')}` : ''}
+          </div>
+        ` : ''}
       </div>
 
       <script>

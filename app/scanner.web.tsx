@@ -31,6 +31,8 @@ interface ScannedCard {
   set_name: string;
   card_number?: string;
   dbId?: number;
+  isSharedInventory?: boolean;
+  sharedCards?: any[];
 }
 
 interface CardOverlay {
@@ -45,6 +47,9 @@ function parseScanData(data: string): ScannedCard {
   if (data.startsWith('{')) {
     try {
       const parsed = JSON.parse(data);
+      if (parsed.type === 'tcg_share' && parsed.cards) {
+        return { name: 'SHARED_INVENTORY', set_name: '', isSharedInventory: true, sharedCards: parsed.cards };
+      }
       return {
         name: parsed.name || parsed.card_name || 'Unknown Card',
         set_name: parsed.set_name || parsed.set || '',
@@ -298,6 +303,20 @@ export default function ScannerWebPage() {
   const handleCodeTap = useCallback(async (overlay: CardOverlay) => {
     if (overlay.code.rawValue === lastScanRef.current) return;
     lastScanRef.current = overlay.code.rawValue;
+
+    // Check if this is a shared inventory QR
+    if (overlay.card.isSharedInventory && overlay.card.sharedCards) {
+      setIsScanning(false);
+      const cardList = overlay.card.sharedCards;
+      const summary = cardList.slice(0, 10).map((c: any) => `• ${c.name} (${c.set_name})${c.price_target ? ` — $${c.price_target}` : ''}`).join('\n');
+      const more = cardList.length > 10 ? `\n... and ${cardList.length - 10} more` : '';
+      if (typeof window !== 'undefined') {
+        alert(`📋 Shared Inventory — ${cardList.length} cards\n\n${summary}${more}`);
+      }
+      lastScanRef.current = null;
+      setIsScanning(true);
+      return;
+    }
 
     setSelectedCard(overlay.card);
     setFoundCard(overlay.foundCard);

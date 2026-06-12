@@ -15,6 +15,7 @@ import {
 import { ErrorState } from '../components/EmptyState';
 import { Skeleton } from '../components/Skeleton';
 import { ResultBanner, ResultBannerData } from '../components/ResultBanner';
+import { ShareInventoryModal } from '../components/ShareInventoryModal';
 
 export default function LogisticsScreen() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function LogisticsScreen() {
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [previewSyncMode, setPreviewSyncMode] = useState(false);
   const [previewData, setPreviewData] = useState<{ rows: number; replaceMode: boolean; fileName: string; content: string } | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -356,12 +358,20 @@ export default function LogisticsScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <Text style={styles.header}>Logistics</Text>
-          <TouchableOpacity
-            style={styles.settingsBtn}
-            onPress={() => router.push('/settings')}
-          >
-            <Text style={styles.settingsBtnText}>⚙</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={styles.settingsBtn}
+              onPress={() => setShowShareModal(true)}
+            >
+              <Text style={styles.settingsBtnText}>📱</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingsBtn}
+              onPress={() => router.push('/settings')}
+            >
+              <Text style={styles.settingsBtnText}>⚙</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={styles.subtitle}>
           {cardCount} card{cardCount !== 1 ? 's' : ''} · Import, export & batch update
@@ -665,6 +675,11 @@ export default function LogisticsScreen() {
           </View>
         </Modal>
       </ScrollView>
+
+      <ShareInventoryModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+      />
     </View>
   );
 }

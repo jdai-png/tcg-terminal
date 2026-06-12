@@ -50,6 +50,17 @@ export default function ScannerScreen() {
       // Parse scanned data — look for 'id' field for direct lookup
       let cardData: ScannedCard;
 
+      // Check if this is a shared inventory QR
+      let sharedInventory: any = null;
+      if (result.data.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(result.data);
+          if (parsed.type === 'tcg_share' && parsed.cards) {
+            sharedInventory = parsed;
+          }
+        } catch {}
+      }
+
       if (result.data.startsWith('{')) {
         const parsed = JSON.parse(result.data);
         cardData = {
@@ -70,6 +81,21 @@ export default function ScannerScreen() {
           name: result.data.trim(),
           set_name: '',
         };
+      }
+
+      if (sharedInventory) {
+        setIsScanning(false);
+        const cardList = sharedInventory.cards as any[];
+        const summary = cardList.slice(0, 10).map((c: any) => `• ${c.name} (${c.set_name})${c.price_target ? ` — $${c.price_target}` : ''}`).join('\n');
+        const more = cardList.length > 10 ? `\n... and ${cardList.length - 10} more` : '';
+        Alert.alert(
+          `📋 Shared Inventory — ${cardList.length} cards`,
+          summary + more,
+          [
+            { text: 'Dismiss', onPress: () => { lastScanRef.current = null; setIsScanning(true); } },
+          ]
+        );
+        return;
       }
 
       setIsScanning(false);
