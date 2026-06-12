@@ -29,12 +29,53 @@ export default function SalesScreen() {
   const [selectedReportDate, setSelectedReportDate] = useState<string | null>(null);
   const [reportSales, setReportSales] = useState<Sale[]>([]);
 
+  type PnLPeriod = 'lifetime' | 'annual' | 'ytd' | 'monthly' | 'weekly' | 'daily' | 'custom';
+  const [pnlPeriod, setPnlPeriod] = useState<PnLPeriod>('lifetime');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+
+  const getDateRange = useCallback((period: PnLPeriod): { from?: string; to?: string } => {
+    const today = new Date();
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+    switch (period) {
+      case 'lifetime': return {};
+      case 'annual': {
+        const start = new Date(today.getFullYear(), 0, 1);
+        const end = new Date(today.getFullYear(), 11, 31);
+        return { from: fmt(start), to: fmt(end) };
+      }
+      case 'ytd': {
+        const start = new Date(today.getFullYear(), 0, 1);
+        return { from: fmt(start), to: fmt(today) };
+      }
+      case 'monthly': {
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        return { from: fmt(start), to: fmt(today) };
+      }
+      case 'weekly': {
+        const start = new Date(today);
+        start.setDate(today.getDate() - 7);
+        return { from: fmt(start), to: fmt(today) };
+      }
+      case 'daily': {
+        return { from: fmt(today), to: fmt(today) };
+      }
+      case 'custom': {
+        return { from: customFrom || undefined, to: customTo || undefined };
+      }
+    }
+  }, [customFrom, customTo]);
+
   const loadData = useCallback(async () => {
     try {
+      const range = getDateRange(pnlPeriod);
+
       const [pnlData, history, cards, eodHistory] = await Promise.all([
-        getPnLSummary(),
-        getSalesHistory(30),
-        getPnLByCard(),
+        getPnLSummary(range.from, range.to),
+        getSalesHistory(30, 0, range.from, range.to),
+        getPnLByCard(range.from, range.to),
         getEndOfDayReportHistory(7),
       ]);
       setPnl(pnlData);
@@ -48,7 +89,7 @@ export default function SalesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [pnlPeriod, customFrom, customTo, getDateRange]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -133,10 +174,82 @@ export default function SalesScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* P&L Period Filter */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: Spacing.md, marginTop: Spacing.sm }}>
+          {([
+            { key: 'lifetime', label: 'Lifetime' },
+            { key: 'annual', label: 'Annual' },
+            { key: 'ytd', label: 'YTD' },
+            { key: 'monthly', label: 'Monthly' },
+            { key: 'weekly', label: 'Weekly' },
+            { key: 'daily', label: 'Daily' },
+            { key: 'custom', label: 'Custom' },
+          ] as { key: PnLPeriod; label: string }[]).map(p => (
+            <TouchableOpacity
+              key={p.key}
+              style={[
+                pnlPeriodStyles.chip,
+                pnlPeriod === p.key && pnlPeriodStyles.chipActive,
+              ]}
+              onPress={() => {
+                if (p.key === 'custom') {
+                  setShowCustomPicker(!showCustomPicker);
+                } else {
+                  setShowCustomPicker(false);
+                }
+                setPnlPeriod(p.key);
+              }}
+            >
+              <Text style={[
+                pnlPeriodStyles.chipText,
+                pnlPeriod === p.key && pnlPeriodStyles.chipTextActive,
+              ]}>{p.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Custom Date Range Picker */}
+        {showCustomPicker && pnlPeriod === 'custom' && (
+          <View style={pnlPeriodStyles.customPicker}>
+            <Text style={pnlPeriodStyles.customLabel}>Custom Date Range</Text>
+            <View style={pnlPeriodStyles.customRow}>
+              <TextInput
+                style={pnlPeriodStyles.customInput}
+                placeholder="From (YYYY-MM-DD)"
+                placeholderTextColor={Colors.textMuted}
+                value={customFrom}
+                onChangeText={setCustomFrom}
+                autoCorrect={false}
+              />
+              <Text style={pnlPeriodStyles.customSep}>to</Text>
+              <TextInput
+                style={pnlPeriodStyles.customInput}
+                placeholder="To (YYYY-MM-DD)"
+                placeholderTextColor={Colors.textMuted}
+                value={customTo}
+                onChangeText={setCustomTo}
+                autoCorrect={false}
+              />
+            </View>
+            <TouchableOpacity
+              style={pnlPeriodStyles.customApplyBtn}
+              onPress={() => {
+                // Trigger data reload by toggling the period reference
+                setPnlPeriod('custom');
+                loadData();
+              }}
+            >
+              <Text style={pnlPeriodStyles.customApplyText}>Apply Range</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* P&L Summary Cards */}
         {pnl && (
           <View style={styles.pnlSection}>
-            <Text style={styles.sectionTitle}>Profit & Loss Overview</Text>
+            <Text style={styles.sectionTitle}>
+              Profit & Loss · {pnlPeriod === 'lifetime' ? 'All Time' : pnlPeriod.charAt(0).toUpperCase() + pnlPeriod.slice(1)}
+            </Text>
             <View style={styles.statRow}>
               <StatCard label="Sales Revenue" value={formatCurrency(pnl.total_sales_revenue)} accent={Colors.success} />
               <StatCard label="Cost Basis" value={formatCurrency(pnl.total_cost_basis)} accent={Colors.textSecondary} />
@@ -836,6 +949,79 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.border,
+  },
+});
+
+const pnlPeriodStyles = StyleSheet.create({
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.bgInput,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginRight: 8,
+  },
+  chipActive: {
+    backgroundColor: Colors.accent + '22',
+    borderColor: Colors.accent,
+  },
+  chipText: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+  },
+  chipTextActive: {
+    color: Colors.accent,
+    fontWeight: '700',
+  },
+  customPicker: {
+    backgroundColor: Colors.bgInput,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  customLabel: {
+    color: Colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  customRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  customInput: {
+    flex: 1,
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: Colors.text,
+    fontSize: FontSize.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  customSep: {
+    color: Colors.textMuted,
+    fontSize: FontSize.sm,
+  },
+  customApplyBtn: {
+    marginTop: Spacing.sm,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+  },
+  customApplyText: {
+    color: Colors.bg,
+    fontSize: FontSize.sm,
+    fontWeight: '700',
   },
 });
 

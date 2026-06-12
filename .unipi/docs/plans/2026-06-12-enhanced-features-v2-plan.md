@@ -60,7 +60,7 @@ Implement 5 feature groups (A–E) across database layer, UI screens, and utilit
     5. Install `expo-image-picker` if needed
     6. Update CSV export/import for description and archived fields
 
-- in-progress: Task 4 — Sales Archiving & ID Retirement
+- completed: Task 4 — Sales Archiving & ID Retirement
   - Description: Decrement card quantity on sale. Auto-archive when quantity hits 0. Add archive toggle to inventory filter. Un-archive support. Prevent sales of archived cards.
   - Dependencies: Task 1 (archived columns)
   - Acceptance Criteria:
@@ -81,7 +81,7 @@ Implement 5 feature groups (A–E) across database layer, UI screens, and utilit
     6. Update sale record modal — filter out archived cards, warn on archive
     7. Add delete-sale warning alert
 
-- unstarted: Task 5 — Time-Filtered P&L Analytics
+- in-progress: Task 5 — Time-Filtered P&L Analytics
   - Description: Add filter chip bar to Sales screen (Lifetime, Annual, YTD, Monthly, Weekly, Daily, Custom). Update P&L summary cards, top cards, and sales history for selected period.
   - Dependencies: Task 1 (time-filtered DB functions)
   - Acceptance Criteria:
