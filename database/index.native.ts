@@ -104,6 +104,14 @@ async function initializeSchema(database: SQLite.SQLiteDatabase): Promise<void> 
   try { await database.execAsync('ALTER TABLE cards ADD COLUMN description TEXT'); } catch {}
   try { await database.execAsync('ALTER TABLE cards ADD COLUMN archived INTEGER NOT NULL DEFAULT 0'); } catch {}
   try { await database.execAsync('ALTER TABLE cards ADD COLUMN archived_at TEXT'); } catch {}
+
+  // Migration: move DataMatrix-like names to data_matrix field (one-time)
+  // Cards previously saved with raw DataMatrix codes as names
+  try {
+    await database.execAsync(
+      "UPDATE cards SET data_matrix = name, name = '' WHERE name GLOB '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*' AND data_matrix IS NULL AND length(name) >= 20"
+    );
+  } catch { /* migration already applied or no rows match */ }
 }
 
 // ---- Card CRUD ----

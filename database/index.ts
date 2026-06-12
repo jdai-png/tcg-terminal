@@ -171,6 +171,18 @@ function loadFromStorage(): void {
         if (c.archived_at === undefined) { c.archived_at = null; migrated = true; }
       }
       if (migrated) saveToStorage();
+
+      // Migration: move DataMatrix-like names to data_matrix field
+      // Cards previously saved with raw DataMatrix codes as names (one-time)
+      let dmMigrated = false;
+      for (const c of cards) {
+        if (c.name && /^\d{20,}$/.test(c.name) && !c.data_matrix) {
+          c.data_matrix = c.name;
+          c.name = '';
+          dmMigrated = true;
+        }
+      }
+      if (dmMigrated) saveToStorage();
     }
 
     // Load operations

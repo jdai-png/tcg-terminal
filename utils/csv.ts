@@ -39,7 +39,7 @@ export function generateCsvTemplate(): string {
       price_sold: '',
       quantity: '1',
       purchase_date: '2024-01-15',
-      data_matrix: '',
+      data_matrix: '01073002362572271054256624020260342205021140610659072',
       tags: 'chase,graded',
       notes: 'PSA 9',
       description: 'The iconic fire-breathing dragon from Base Set',
@@ -234,6 +234,13 @@ export async function importCsvContent(
               if (priceSoldVal !== undefined && !isNaN(priceSoldVal)) card.price_sold = priceSoldVal;
               if (row.purchase_date && String(row.purchase_date).trim()) card.purchase_date = String(row.purchase_date).trim();
               if (hasDataMatrix) card.data_matrix = dm;
+
+              // Auto-detect DataMatrix-like names: if name is purely numeric and >= 20 chars,
+              // move it to data_matrix instead (fixes exports from before the scanner fix)
+              if (!hasDataMatrix && card.name && /^\d{20,}$/.test(card.name)) {
+                card.data_matrix = card.name;
+                card.name = '';
+              }
               if (row.tags !== undefined && String(row.tags).trim()) card.tags = String(row.tags).trim();
               if (row.notes !== undefined && String(row.notes).trim()) card.notes = String(row.notes).trim();
               if (row.description !== undefined && String(row.description).trim()) card.description = String(row.description).trim();
