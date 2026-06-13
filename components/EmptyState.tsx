@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors, FontSize, Spacing } from '../utils/format';
 
 interface EmptyStateProps {
@@ -30,9 +30,13 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
       <Text style={styles.title}>Something went wrong</Text>
       <Text style={styles.subtitle}>{message}</Text>
       {onRetry && (
-        <Text style={styles.retry} onPress={onRetry}>
-          Tap to retry
-        </Text>
+        <TouchableOpacity
+          style={styles.retry}
+          onPress={onRetry}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.retryText}>Tap to retry</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -76,11 +80,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   retry: {
-    color: Colors.accent,
-    fontSize: FontSize.md,
-    fontWeight: '600',
     marginTop: Spacing.md,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.lg,
+  },
+  retryText: {
+    color: Colors.accent,
+    fontSize: FontSize.md,
+    fontWeight: '600',
   },
 });
