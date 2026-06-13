@@ -1,3 +1,17 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+*.tsbuildinfo
+
+# Environment
+*.local
+.env
+.env.local
+.env.*.local
+
 # Logs
 logs
 *.log
@@ -6,11 +20,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
 
 # Expo
 .expo
@@ -21,13 +30,34 @@ dist-ssr
 *.mobileprovision
 *.orig.*
 
+# Pi / Unipi workflow
+.unipi
+
+# Archives
+*.zip
+*.tar.gz
+*.tgz
+
+# OS
+.DS_Store
+Thumbs.db
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# React Native / Expo
+ios/Pods
+android/.gradle
+android/app/build
+android/build
+*.hprof
+
+# TypeScript
+*.tsbuildinfo
