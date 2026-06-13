@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, StyleSheet, ActivityIndicator, ScrollView, Platform,
+  View, Text, TouchableOpacity, Modal, StyleSheet, ActivityIndicator, Platform,
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { Colors, FontSize, Spacing, BorderRadius } from '../utils/format';
