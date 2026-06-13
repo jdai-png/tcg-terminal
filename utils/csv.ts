@@ -261,8 +261,8 @@ export async function importCsvContent(
             }
           }
 
-          // Sync mode: remove cards not in the CSV
-          if (syncMode) {
+          // Sync mode: remove cards not in the CSV (only if we have IDs to keep)
+          if (syncMode && csvIds.length > 0) {
             result.removed = await deleteCardsNotInList(csvIds);
           }
 
