@@ -8,7 +8,7 @@ interface CardRowProps {
   onPress: (card: Card) => void;
 }
 
-export function CardRow({ card, onPress }: CardRowProps) {
+function CardRowComponent({ card, onPress }: CardRowProps) {
   const conditionColor = Colors.condition[card.condition as keyof typeof Colors.condition] || Colors.textSecondary;
 
   return (
@@ -45,6 +45,8 @@ export function CardRow({ card, onPress }: CardRowProps) {
     </TouchableOpacity>
   );
 }
+
+export const CardRow = React.memo(CardRowComponent);
 
 const styles = StyleSheet.create({
   container: {
