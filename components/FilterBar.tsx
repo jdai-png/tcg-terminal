@@ -22,6 +22,41 @@ interface FilterBarProps {
   onIncludeArchivedChange?: (value: boolean) => void;
 }
 
+// ── Extracted sub-component (avoids re-creation on every FilterBar render) ──
+
+const FilterChip = React.memo(function FilterChip({
+  label, value, options, filterKey, onUpdate,
+}: {
+  label: string;
+  value: string | undefined;
+  options: string[];
+  filterKey: keyof FilterValues;
+  onUpdate: (key: keyof FilterValues, value: string) => void;
+}) {
+  return (
+    <View style={cStyles.filterGroup}>
+      <Text style={cStyles.filterLabel}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={cStyles.chipScroll}>
+        <TouchableOpacity
+          style={[cStyles.chip, !value && cStyles.chipActive]}
+          onPress={() => onUpdate(filterKey, '')}
+        >
+          <Text style={[cStyles.chipText, !value && cStyles.chipTextActive]}>All</Text>
+        </TouchableOpacity>
+        {options.map(opt => (
+          <TouchableOpacity
+            key={opt}
+            style={[cStyles.chip, value === opt && cStyles.chipActive]}
+            onPress={() => onUpdate(filterKey, value === opt ? '' : opt)}
+          >
+            <Text style={[cStyles.chipText, value === opt && cStyles.chipTextActive]}>{opt}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
+
 export function FilterBar({ filters, onFiltersChange, sets, rarities, conditions, includeArchived, onIncludeArchivedChange }: FilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
   const hasActiveFilters = !!filters.set_name || !!filters.rarity || !!filters.condition || filters.minPrice !== undefined || filters.maxPrice !== undefined;
@@ -33,31 +68,6 @@ export function FilterBar({ filters, onFiltersChange, sets, rarities, conditions
   const clearFilters = () => {
     onFiltersChange({ search: '', set_name: undefined, rarity: undefined, condition: undefined, minPrice: undefined, maxPrice: undefined, includeArchived: false });
   };
-
-  const FilterChip = ({ label, value, options, filterKey }: {
-    label: string; value: string | undefined; options: string[]; filterKey: keyof FilterValues;
-  }) => (
-    <View style={cStyles.filterGroup}>
-      <Text style={cStyles.filterLabel}>{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={cStyles.chipScroll}>
-        <TouchableOpacity
-          style={[cStyles.chip, !value && cStyles.chipActive]}
-          onPress={() => updateFilter(filterKey, '')}
-        >
-          <Text style={[cStyles.chipText, !value && cStyles.chipTextActive]}>All</Text>
-        </TouchableOpacity>
-        {options.map(opt => (
-          <TouchableOpacity
-            key={opt}
-            style={[cStyles.chip, value === opt && cStyles.chipActive]}
-            onPress={() => updateFilter(filterKey, value === opt ? '' : opt)}
-          >
-            <Text style={[cStyles.chipText, value === opt && cStyles.chipTextActive]}>{opt}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
 
   return (
     <View style={cStyles.container}>
@@ -84,9 +94,9 @@ export function FilterBar({ filters, onFiltersChange, sets, rarities, conditions
       {/* Expanded filters */}
       {showFilters && (
         <View style={cStyles.filtersPanel}>
-          <FilterChip label="Set" value={filters.set_name} options={sets} filterKey="set_name" />
-          <FilterChip label="Rarity" value={filters.rarity} options={rarities} filterKey="rarity" />
-          <FilterChip label="Condition" value={filters.condition} options={conditions} filterKey="condition" />
+          <FilterChip label="Set" value={filters.set_name} options={sets} filterKey="set_name" onUpdate={updateFilter} />
+          <FilterChip label="Rarity" value={filters.rarity} options={rarities} filterKey="rarity" onUpdate={updateFilter} />
+          <FilterChip label="Condition" value={filters.condition} options={conditions} filterKey="condition" onUpdate={updateFilter} />
 
           <View style={cStyles.filterGroup}>
             <Text style={cStyles.filterLabel}>Price Range</Text>
