@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Platform,
 } from 'react-native';
@@ -42,8 +42,6 @@ export default function DashboardScreen() {
       setRefreshing(false);
     }
   }, []);
-
-  useEffect(() => { loadData(); }, [loadData]);
 
   useFocusEffect(
     useCallback(() => { loadData(); }, [loadData])

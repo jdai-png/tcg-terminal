@@ -91,8 +91,6 @@ export default function SalesScreen() {
     }
   }, [pnlPeriod, customFrom, customTo, getDateRange]);
 
-  useEffect(() => { loadData(); }, [loadData]);
-
   useFocusEffect(
     useCallback(() => { loadData(); }, [loadData])
   );

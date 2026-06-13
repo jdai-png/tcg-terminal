@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Platform,
 } from 'react-native';
@@ -57,8 +57,6 @@ export default function InventoryScreen() {
       setRefreshing(false);
     }
   }, []);
-
-  useEffect(() => { loadCards(filters); }, [filters]);
 
   useFocusEffect(
     useCallback(() => { loadCards(filters); }, [filters])
