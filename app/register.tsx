@@ -138,48 +138,51 @@ export default function RegisterScreen() {
   const handlePrint = () => {
     if (!savedCardId || !svgData) return;
 
-    if (Platform.OS === 'web') {
-      // @ts-ignore — DOM canvas API, not available in RN type context
-      const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = 400;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const img = new Image();
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-
-      img.onload = () => {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 20, 20, 360, 360);
-        URL.revokeObjectURL(url);
-        const pngData = canvas.toDataURL('image/png');
-
-        // Use the print utility (import dynamically to avoid native crash)
-        const { printLabel } = require('../utils/labelPrinter');
-        printLabel(
-          {
-            id: savedCardId,
-            name: savedCardName,
-            set_name: savedCardSet,
-            card_number: savedCardNumber || null,
-            rarity: rarity.trim() || null,
-            condition,
-            price_paid: parseFloat(price),
-            quantity: parseInt(quantity, 10) || 1,
-            purchase_date: purchaseDate.trim() || null,
-            notes: notes.trim() || null,
-            image_uri: imageUri,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as any,
-          pngData
-        );
-      };
-      img.src = url;
+    if (Platform.OS !== 'web') {
+      Alert.alert('Print Unavailable', 'Label printing is only available on web.');
+      return;
     }
+
+    // @ts-ignore — DOM canvas API, not available in RN type context
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 20, 20, 360, 360);
+      URL.revokeObjectURL(url);
+      const pngData = canvas.toDataURL('image/png');
+
+      // Use the print utility (import dynamically to avoid native crash)
+      const { printLabel } = require('../utils/labelPrinter');
+      printLabel(
+        {
+          id: savedCardId,
+          name: savedCardName,
+          set_name: savedCardSet,
+          card_number: savedCardNumber || null,
+          rarity: rarity.trim() || null,
+          condition,
+          price_paid: parseFloat(price),
+          quantity: parseInt(quantity, 10) || 1,
+          purchase_date: purchaseDate.trim() || null,
+          notes: notes.trim() || null,
+          image_uri: imageUri,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any,
+        pngData
+      );
+    };
+    img.src = url;
   };
 
   const handleViewCard = () => {
@@ -243,12 +246,17 @@ export default function RegisterScreen() {
                 <Text style={styles.matrixLoadingText}>Generating DataMatrix...</Text>
               </View>
             )}
-            {svgData && !generatingMatrix && (
+            {svgData && !generatingMatrix && Platform.OS === 'web' && (
               <View style={styles.matrixSvgContainer}>
                 <div
                   style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   dangerouslySetInnerHTML={{ __html: svgData }}
                 />
+              </View>
+            )}
+            {svgData && !generatingMatrix && Platform.OS !== 'web' && (
+              <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', padding: Spacing.md }}>
+                <Text style={{ color: Colors.textMuted, fontSize: FontSize.xs, textAlign: 'center' }}>DataMatrix generated successfully</Text>
               </View>
             )}
           </View>

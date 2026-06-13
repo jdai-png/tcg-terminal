@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, StyleSheet, Platform, ActivityIndicator, ScrollView, Switch,
+  View, Text, TouchableOpacity, Modal, StyleSheet, Platform, ActivityIndicator, ScrollView, Switch, Alert,
 } from 'react-native';
 import { Colors, FontSize, Spacing, BorderRadius, formatCurrency } from '../utils/format';
 import { Card, getAppSettings } from '../database';
@@ -60,28 +60,31 @@ export function PrintLabelModal({ visible, card, onClose }: PrintLabelModalProps
   const handlePrint = () => {
     if (!card || !svgData) return;
 
-    // Convert SVG to a PNG data URL via canvas (needed for print window img tag)
-    if (Platform.OS === 'web') {
-      const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = 400;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const img = new Image();
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-
-      img.onload = () => {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 20, 20, 360, 360);
-        URL.revokeObjectURL(url);
-        const pngData = canvas.toDataURL('image/png');
-        printLabel(card, pngData, includeSocialsOnLabel, includeSocialsOnLabel ? socialHandles : undefined);
-      };
-      img.src = url;
+    if (Platform.OS !== 'web') {
+      Alert.alert('Print Unavailable', 'Label printing is only available on web.');
+      return;
     }
+
+    // Convert SVG to a PNG data URL via canvas (needed for print window img tag)
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 20, 20, 360, 360);
+      URL.revokeObjectURL(url);
+      const pngData = canvas.toDataURL('image/png');
+      printLabel(card, pngData, includeSocialsOnLabel, includeSocialsOnLabel ? socialHandles : undefined);
+    };
+    img.src = url;
   };
 
   if (!card) return null;
@@ -120,11 +123,16 @@ export function PrintLabelModal({ visible, card, onClose }: PrintLabelModalProps
               {error && (
                 <Text style={styles.previewError}>{error}</Text>
               )}
-              {svgData && !loading && (
+              {svgData && !loading && Platform.OS === 'web' && (
                 <div
                   style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   dangerouslySetInnerHTML={{ __html: svgData }}
                 />
+              )}
+              {svgData && !loading && Platform.OS !== 'web' && (
+                <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: Colors.textMuted, fontSize: FontSize.xs }}>DataMatrix ready for print</Text>
+                </View>
               )}
             </View>
 
