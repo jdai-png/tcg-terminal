@@ -130,7 +130,7 @@ const statStyles = StyleSheet.create({
   },
 });
 
-export { StatCard as default };
+export default PortfolioChart;
 
 const styles = StyleSheet.create({
   container: {
